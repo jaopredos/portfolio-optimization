@@ -133,3 +133,50 @@ experimento:
 
 caminhos:
   cache_dir: "data_cache"
+
+# =============================================================================
+# Checkpoint 2 — extensão multiobjetivo (NSGA-II + SPEA-II)
+#
+# As seções abaixo são lidas apenas pelos módulos `src/*_mo.py` e por
+# `src/run_experiment_mo.py`. Nada do fluxo do Checkpoint 1 (run_experiment,
+# optimizer_de, objectives, baselines, metrics, plots) lê estas seções, e
+# `esg_cp2` continua sem nenhuma mudança de schema — só passa a ser
+# efetivamente lida (antes era só um placeholder reservado).
+#
+# As sementes (`experimento.sementes`, acima) e os diretórios de saída
+# (`experimento.dir_resultados`/`dir_figuras`, acima) são REUSADOS tal como
+# estão — não duplicados aqui — para garantir que o CP2 rode sobre as
+# mesmas 5 sementes do CP1 por construção.
+# =============================================================================
+
+objetivo_mo:
+  # Normalização (z-score) dos 3 objetivos (f1, f2, f3) antes de entrar no
+  # NSGA-II/SPEA-II — ver justificativa em src/objectives_mo.py. Mesma ideia
+  # do CP1 (n_amostras_normalizacao/semente_normalizacao em `objetivo`),
+  # recalculada aqui com o vetor ESG incluído.
+  n_amostras_normalizacao: 5000
+  semente_normalizacao: 123
+
+otimizador_nsga2:
+  # NSGA-II via pymoo (pymoo.algorithms.moo.nsga2.NSGA2). Operadores
+  # (SBX, mutação polinomial, torneio binário) ficam nos defaults do pymoo.
+  pop_size: 100
+  n_gen: 150
+  eliminate_duplicates: true
+
+otimizador_spea2:
+  # SPEA-II via pymoo (pymoo.algorithms.moo.spea2.SPEA2). Mesmo pop_size e
+  # n_gen do NSGA-II para que a comparação entre os dois algoritmos isole o
+  # efeito do mecanismo de seleção/diversidade, não do orçamento.
+  pop_size: 100
+  n_gen: 150
+  eliminate_duplicates: true
+
+hipervolume:
+  # Ponto de referência do hipervolume, no espaço NORMALIZADO (z-score) dos
+  # objetivos: como a normalização garante média 0 e desvio 1 por
+  # construção, um ponto fixo a k desvios-padrão da média já é pior do que
+  # praticamente toda carteira factível, em qualquer escala original — por
+  # isso pode ser o mesmo em todas as sementes e nos dois algoritmos
+  # (essencial para que os hipervolumes sejam comparáveis entre si).
+  k_desvios_ref_point: 4.0
