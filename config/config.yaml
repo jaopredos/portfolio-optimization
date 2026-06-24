@@ -1,0 +1,135 @@
+# =============================================================================
+# Configuração do Checkpoint 1 — Otimização de Portfólio Markowitz (risco-retorno)
+# INF0415 — Heurísticas e Modelagem Multiobjetivo (UFG)
+#
+# O CP1 é MONO-OBJETIVO: apenas risco e retorno (Markowitz clássico). O
+# terceiro objetivo (ESG) é reservado para o Checkpoint 2 (multiobjetivo) e
+# NÃO faz parte do fluxo executado a partir deste arquivo — ver
+# `src/esg_cp2.py` e a seção `esg_cp2` (marcada, não lida pelo pipeline).
+#
+# Todo o pipeline (dados, objetivos, otimizador, baselines e análise) é
+# parametrizado a partir deste arquivo. Para reproduzir os experimentos com
+# outra lista de ativos, outro w_max, outros pesos de escalarização ou outro
+# número de sementes, basta editar este arquivo — nenhum código precisa
+# mudar.
+# =============================================================================
+
+dados:
+  # Ativos líquidos da B3 (sufixo .SA, formato yfinance), cobrindo setores
+  # distintos (bancos, commodities, varejo, utilities, saúde, tecnologia).
+  tickers:
+    - PETR4.SA   # Petrobras (energia)
+    - VALE3.SA   # Vale (mineração)
+    - ITUB4.SA   # Itaú Unibanco (bancos)
+    - BBDC4.SA   # Bradesco (bancos)
+    - BBAS3.SA   # Banco do Brasil (bancos)
+    - ITSA4.SA   # Itaúsa (holding financeira)
+    - ABEV3.SA   # Ambev (bebidas)
+    - WEGE3.SA   # WEG (bens de capital)
+    - RENT3.SA   # Localiza (locação de veículos)
+    - SUZB3.SA   # Suzano (papel e celulose)
+    - GGBR4.SA   # Gerdau (siderurgia)
+    - CSNA3.SA   # CSN (siderurgia)
+    - CMIG4.SA   # Cemig (energia elétrica)
+    - EQTL3.SA   # Equatorial (energia elétrica)
+    - RADL3.SA   # Raia Drogasil (varejo farma)
+    - LREN3.SA   # Lojas Renner (varejo)
+    - B3SA3.SA   # B3 (infraestrutura de mercado)
+    - PRIO3.SA   # PetroRio (energia)
+    - HAPV3.SA   # Hapvida (saúde)
+    - TOTS3.SA   # Totvs (tecnologia)
+    - RAIL3.SA   # Rumo (logística/ferrovias)
+    - SBSP3.SA   # Sabesp (saneamento)
+    - VIVT3.SA   # Vivo/Telefônica Brasil (telecom)
+    - KLBN11.SA  # Klabin (papel e celulose)
+
+  # Observação: EMBR3.SA, JBSS3.SA, ELET3.SA e CCRO3.SA foram avaliados mas
+  # excluídos por estarem retornando "possibly delisted" no yfinance no
+  # momento da implementação (provavelmente mudanças de listagem/ticker —
+  # ex. JBS migrou parte da listagem para a NYSE em 2025). Substituídos por
+  # ativos de setor equivalente que respondem normalmente.
+
+  # Janela histórica usada para estimar mu (retorno esperado) e Sigma
+  # (matriz de covariância). "anos" define o tamanho da janela contada a
+  # partir da data de execução ("today"). Documentado no README: como o
+  # yfinance reflete o pregão real, reexecuções em datas diferentes vão
+  # baixar janelas de preços diferentes (isso é esperado e não afeta a
+  # reprodutibilidade da OTIMIZAÇÃO em si, que é controlada pelas sementes).
+  data_fim: "today"
+  anos_historico: 5
+
+  # Frequência usada para calcular retornos (yfinance baixa diário; aqui
+  # agregamos para retornos diários simples e anualizamos com 252 pregões).
+  pregoes_por_ano: 252
+
+  # Aplica shrinkage de Ledoit-Wolf (sklearn) sobre a matriz de covariância
+  # amostral antes de anualizar. Reduz ruído de estimação quando o número de
+  # ativos é grande relativo ao número de observações.
+  usar_ledoit_wolf: true
+
+  # Cache local dos preços baixados (evita rebaixar a cada execução).
+  cache_dir: "data_cache"
+  usar_cache: true
+
+# CP2 — não usado no Checkpoint 1. Mantido apenas para que o stub em
+# src/esg_cp2.py já tenha de onde ler parâmetros quando o ESG for
+# reativado no Checkpoint 2 (multiobjetivo). Nenhuma função do fluxo do
+# CP1 (data_loader, objectives, baselines, metrics, run_experiment) lê
+# esta seção.
+esg_cp2:
+  semente_esg: 2024
+  score_min: 0.0
+  score_max: 100.0
+
+restricoes:
+  w_max: 0.20   # teto de concentração por ativo (capped simplex)
+  w_min: 0.0    # sem posições a descoberto (long-only)
+
+objetivo:
+  # g(w) = lambda1 * f1_norm(w) + lambda2 * f2_norm(w)
+  # com f1 = -mu^T w (retorno) e f2 = w^T Sigma w (risco) — Markowitz
+  # clássico mono-objetivo. Os f_i são normalizados (z-score) antes de
+  # combinar — ver objectives.py. lambda2/lambda1 funciona como um
+  # coeficiente de aversão ao risco (ver formulação no notebook/README).
+  lambda1: 0.5   # peso do retorno
+  lambda2: 0.5   # peso do risco
+
+  # Normalização dos componentes: amostra `n_amostras_normalizacao`
+  # carteiras factíveis aleatórias (via projeção capped-simplex) e usa a
+  # média/desvio-padrão de f1, f2 nessa amostra como referência de
+  # z-score. Fixado por `semente_normalizacao` para ser determinístico.
+  n_amostras_normalizacao: 5000
+  semente_normalizacao: 123
+
+otimizador_de:
+  # Differential Evolution via pymoo (pymoo.algorithms.soo.nonconvex.de.DE)
+  pop_size: 80
+  n_gen: 150
+  variant: "DE/rand/1/bin"
+  CR: 0.9      # taxa de crossover
+  F: 0.8       # fator de mutação/escala diferencial
+  # Tratamento de restrições: reparo por projeção no simplex com teto,
+  # aplicado a cada indivíduo após variação (ver constraints.py e
+  # optimizer_de.py). Penalização fica disponível como modo alternativo.
+  modo_restricao: "reparo"   # "reparo" (padrão) ou "penalizacao"
+
+metricas:
+  # Taxa livre de risco usada no índice de Sharpe. Simplificação: 0.0
+  # (documentado no README/DECISOES.md). Para um valor mais realista,
+  # poderia-se usar a Selic/CDI médio do período.
+  taxa_livre_risco: 0.0
+
+baselines:
+  # Random search usa o MESMO orçamento de avaliações de função que o DE
+  # (pop_size * n_gen), amostrando carteiras factíveis via projeção
+  # capped-simplex, para a comparação ser justa.
+  random_search_avaliacoes: null  # null => calculado como pop_size * n_gen
+
+experimento:
+  n_seeds: 5          # CP1 pede 5 sementes; trivial mudar para 10
+  sementes: [1, 2, 3, 4, 5]
+  dir_resultados: "results"
+  dir_figuras: "figures"
+
+caminhos:
+  cache_dir: "data_cache"

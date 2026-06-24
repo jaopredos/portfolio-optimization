@@ -1,0 +1,26 @@
+# Dependências diretas do projeto, com versões fixadas (testado com Python 3.11).
+# Gerência recomendada: uv (ver README.md). Para pip puro: `pip install -r requirements.txt`.
+# As versões exatas das transitivas (resolução completa) ficam registradas em uv.lock.
+
+numpy==2.4.6
+pandas==3.0.3
+matplotlib==3.11.0
+pyyaml==6.0.3
+
+# Metaheurística (Differential Evolution)
+pymoo==0.6.1.6
+
+# Ótimo exato (QP convexo)
+cvxpy==1.9.2
+
+# Dados de mercado
+yfinance==1.4.1
+
+# Shrinkage de Ledoit-Wolf para a matriz de covariância
+scikit-learn==1.9.0
+
+# Para executar o entregável notebooks/cp1_otimizacao_portfolio.ipynb
+# (autocontido — não depende de src/, mas precisa destas mesmas bibliotecas)
+jupyter==1.1.1
+ipykernel==7.3.0
+nbconvert==7.17.1
