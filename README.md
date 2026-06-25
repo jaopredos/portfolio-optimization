@@ -1,18 +1,22 @@
-# Otimização de Portfólio Markowitz (Risco-Retorno) — Checkpoint 1
+# Otimização de Portfólio Markowitz (Risco-Retorno-ESG)
 
 Projeto final de **INF0415 — Heurísticas e Modelagem Multiobjetivo** (UFG).
 
-Este é o **Checkpoint 1**: modelagem completa em código do problema clássico
-de Markowitz (risco-retorno, **mono-objetivo**), otimizado com uma
-metaheurística (Differential Evolution) e comparado a três baselines, com
-análise estatística inicial sobre 5 sementes.
+O repositório cobre dois checkpoints:
 
-O projeto final é uma extensão multiobjetivo do Markowitz incorporando ESG
-como terceiro objetivo — mas isso é o Checkpoint 2. Neste checkpoint o ESG
-**não** faz parte da formulação, do experimento, das métricas nem das
-figuras: ele está isolado em `src/esg_cp2.py` (e em um apêndice isolado do
-notebook), preservado para reativação futura sem precisar reescrever o
-restante do pipeline. Ver `DECISOES.md`.
+- **Checkpoint 1**: modelagem completa em código do problema clássico de
+  Markowitz (risco-retorno, **mono-objetivo**), otimizado com uma
+  metaheurística (Differential Evolution) e comparado a três baselines, com
+  análise estatística inicial sobre 5 sementes. O ESG **não** faz parte da
+  formulação, do experimento, das métricas nem das figuras deste checkpoint:
+  fica isolado em `src/esg_cp2.py`, preservado para reativação no CP2 sem
+  precisar reescrever o restante do pipeline.
+- **Checkpoint 2**: extensão **multiobjetivo** do mesmo problema, reativando
+  ESG como terceiro objetivo e resolvendo com dois algoritmos evolutivos
+  multiobjetivo (**NSGA-II** e **SPEA-II**, via `pymoo`), comparada à versão
+  mono-objetivo do CP1, a baselines mapeados ao espaço de 3 objetivos e à
+  fronteira de Pareto inicial (população não-evoluída). Ver
+  "Entregável do Checkpoint 2" abaixo.
 
 ## Entregável principal: o notebook
 
@@ -26,6 +30,30 @@ O pacote `src/` (descrito mais abaixo) implementa exatamente a mesma lógica
 de forma modular, e é mantido como base para o Checkpoint 2 e como caminho
 de linha de comando alternativo (sem precisar de Jupyter). As duas
 implementações foram validadas lado a lado e produzem os mesmos resultados.
+
+## Entregável do Checkpoint 2
+
+**`notebooks/cp2_otimizacao_portfolio_multiobjetivo.ipynb`** é o entregável
+do Checkpoint 2 — também autocontido (não importa de `src/`), determinístico
+e reproduzível do início ao fim em um kernel limpo. Reativa o terceiro
+objetivo ESG (`src/esg_cp2.py`) e resolve o problema com **NSGA-II** e
+**SPEA-II** (pymoo nativo), cobrindo os quatro pontos pedidos no enunciado:
+versão multiobjetivo rodando (5 sementes por algoritmo), comparação com a
+versão mono-objetivo (reexecuta o DE do CP1 sobre os mesmos dados e mapeia o
+resultado no espaço de 3 objetivos), baselines ($1/N$ e random search com o
+mesmo orçamento dos MOEAs) e a fronteira de Pareto inicial (população não-
+evoluída) comparada à fronteira final. A discussão de trade-offs (retorno x
+risco x ESG, NSGA-II x SPEA-II, comparação com a escalarização do CP1) está
+na última seção do próprio notebook.
+
+O pacote `src/` ganhou os módulos `*_mo.py` (descritos na Estrutura abaixo),
+implementando a mesma lógica de forma modular — caminho de linha de comando
+alternativo via `uv run python -m src.run_experiment_mo`. Reproduzir:
+
+```bash
+uv sync
+uv run jupyter nbconvert --to notebook --execute --inplace notebooks/cp2_otimizacao_portfolio_multiobjetivo.ipynb
+```
 
 ## Formulação
 
@@ -53,6 +81,15 @@ g(w) = lambda1 * f1_norm(w) + lambda2 * f2_norm(w)
 Esta é a leitura clássica de Markowitz: minimizar `g(w)` equivale a maximizar
 a utilidade média-variância `mu^T w - delta * w^T Sigma w`, com
 `delta = lambda2/lambda1` funcionando como coeficiente de aversão ao risco.
+
+**Extensão multiobjetivo (Checkpoint 2).** Adiciona um terceiro componente,
+`f3(w) = -e^T w` (score ESG negado, `e` sintético — ver `src/esg_cp2.py`), e
+**não escaleriza**: os três objetivos `(f1,f2,f3)` são otimizados
+simultaneamente por dominância de Pareto (NSGA-II/SPEA-II), produzindo uma
+fronteira de carteiras em vez de uma única solução. Formulação completa,
+discussão de por que normalizar antes de otimizar mesmo sem escalarização, e
+a comparação com a leitura mono-objetivo acima: ver Seção 1 do notebook do
+CP2.
 
 ## Instalação
 
@@ -99,27 +136,38 @@ o mesmo papel é desempenhado por `config/config.yaml`.
 ## Estrutura
 
 ```
-notebooks/cp1_otimizacao_portfolio.ipynb  Entregável: notebook autocontido (formulação + código + análise)
-config/config.yaml          Configuração do pipeline modular (src/)
+notebooks/cp1_otimizacao_portfolio.ipynb              Entregável CP1: notebook autocontido (mono-objetivo)
+notebooks/cp2_otimizacao_portfolio_multiobjetivo.ipynb Entregável CP2: notebook autocontido (multiobjetivo)
+config/config.yaml          Configuração dos dois pipelines modulares (src/)
 src/
   data_loader.py             yfinance -> mu, Sigma (c/ Ledoit-Wolf opcional)
-  objectives.py               f1, f2, normalização (z-score) e g escalarizada
+  objectives.py               f1, f2, normalização (z-score) e g escalarizada — CP1
   constraints.py              Projeção no capped-simplex (reparo de factibilidade)
-  optimizer_de.py             Problem + Repair + Callback do pymoo, DE
-  baselines.py                Ótimo exato (cvxpy), 1/N, random search
-  metrics.py                  Retorno, risco, Sharpe, gap relativo
-  plots.py                    Curva de convergência e boxplot comparativo
-  run_experiment.py           Orquestra tudo, salva CSV e figuras
-  esg_cp2.py                  ESG isolado (f3, gerador sintético, métrica) — não usado no CP1
-results/                     CSVs gerados pelo pipeline modular (detalhado, agregado, pesos)
-figures/                     Figuras geradas pelo pipeline modular (convergência, boxplot)
+  optimizer_de.py             Problem + Repair + Callback do pymoo, DE — CP1
+  baselines.py                Ótimo exato (cvxpy), 1/N, random search — CP1
+  metrics.py                  Retorno, risco, Sharpe, gap relativo — CP1
+  plots.py                    Curva de convergência e boxplot comparativo — CP1
+  run_experiment.py           Orquestra o CP1, salva CSV e figuras
+  esg_cp2.py                  ESG (f3, gerador sintético, métrica) — reativado no CP2
+  objectives_mo.py            f1,f2,f3 sem escalarização + normalização 3D — CP2
+  optimizer_moea.py           Problem 3-obj + NSGA-II/SPEA-II (pymoo) + hipervolume — CP2
+  baselines_mo.py             1/N e random search no espaço de 3 objetivos — CP2
+  metrics_mo.py                Métricas + hipervolume + contagem de não-dominados — CP2
+  plots_mo.py                  Fronteira inicial/final, convergência de HV, overlay — CP2
+  run_experiment_mo.py         Orquestra o CP2, salva CSV (sufixo _mo) e figuras (sufixo _mo)
+results/                     CSVs dos dois pipelines modulares (CP1 sem sufixo, CP2 com sufixo _mo)
+figures/                     Figuras dos dois pipelines modulares (CP1 sem sufixo, CP2 com sufixo _mo)
 ```
 
 ## Bibliotecas reutilizadas
 
 - **[pymoo](https://pymoo.org/)** — algoritmo Differential Evolution
-  (`pymoo.algorithms.soo.nonconvex.de.DE`) e infraestrutura de `Problem`,
-  `Repair` e `Callback`.
+  (`pymoo.algorithms.soo.nonconvex.de.DE`, CP1), NSGA-II e SPEA-II
+  (`pymoo.algorithms.moo.nsga2.NSGA2`, `pymoo.algorithms.moo.spea2.SPEA2`,
+  CP2), indicador de hipervolume (`pymoo.indicators.hv.HV`) e ordenação por
+  não-dominância (`pymoo.util.nds.non_dominated_sorting`), além da
+  infraestrutura de `Problem`, `Repair` e `Callback` reaproveitada nos dois
+  checkpoints.
 - **[cvxpy](https://www.cvxpy.org/)** — solver do QP convexo para o ótimo
   exato (baseline de referência para o gap do DE).
 - **[yfinance](https://github.com/ranaroussi/yfinance)** — download de
@@ -146,7 +194,8 @@ figures/                     Figuras geradas pelo pipeline modular (convergênci
   (coeficiente de aversão ao risco neutro). Configurável.
 - **Taxa livre de risco** (para o Sharpe): `0.0` por simplicidade.
 - **5 sementes** (`[1, 2, 3, 4, 5]`), trivialmente extensível para 10 ou mais.
-- **ESG**: fora de escopo neste checkpoint (ver seção acima e `DECISOES.md`).
+- **ESG**: fora de escopo no Checkpoint 1 (reativado no Checkpoint 2 como
+  vetor sintético — ver "Resultados do Checkpoint 2" e `src/esg_cp2.py`).
 
 ## Resultados do Checkpoint 1 (execução de referência)
 
@@ -164,17 +213,38 @@ sementes ≈ `0.002`) para muito próximo do ótimo global do QP, superando
 claramente o random search com o mesmo orçamento de avaliações. Detalhes,
 figuras e discussão completa em `notebooks/cp1_otimizacao_portfolio.ipynb`.
 
-## Próximos passos (Checkpoint 2)
+## Resultados do Checkpoint 2 (execução de referência)
 
-- `src/esg_cp2.py` já contém `f3_esg`, o gerador sintético do vetor ESG e a
-  métrica de score ESG, isolados e prontos para serem reincorporados.
-- `src/objectives.py::avaliar_componentes` devolve hoje só `(f1, f2)`;
-  reincorporar `f3` (de `esg_cp2.py`) e um `lambda3` é o ponto de extensão
-  direto para o NSGA-II (ou para um CP1 estendido com três objetivos
-  escalarizados).
-- A normalização e as restrições (capped-simplex) são reaproveitáveis sem
-  alteração para a versão multiobjetivo — só muda a dimensão do vetor de
-  objetivos.
+Com os defaults (NSGA-II e SPEA-II: `pop_size=100`, `n_gen=150`), nas 5
+sementes, reativando ESG (sintético) como terceiro objetivo:
+
+| Algoritmo | HV médio por semente (±desvio) | não-dominadas por semente | HV da fronteira agregada (5 sementes) |
+|---|---|---|---|
+| NSGA-II | 269,38 (±7,30) | 100/100 | 281,91 (307 soluções) |
+| SPEA-II | 266,91 (±5,77) | 100/100 | 277,50 (304 soluções) |
+
+| Método | retorno | risco | Sharpe | score ESG |
+|---|---|---|---|---|
+| DE mono-objetivo (CP1, mesmos dados) | 25,70% | 17,12% | 1,501 | 39,59 |
+| Fronteira NSGA-II (média) | 18,31% | 16,69% | 1,092 | 59,24 |
+| Fronteira SPEA-II (média) | 19,06% | 16,64% | 1,145 | 62,36 |
+
+NSGA-II e SPEA-II convergem para fronteiras muito próximas (HV difere por
+menos de 1%). O ponto do DE mono-objetivo não é dominado pela fronteira
+multiobjetivo em nenhuma das 5 sementes — está sobre a fronteira eficiente
+de retorno-risco, mas no canto extremo que ignora ESG por completo, com
+score ESG ~20 pontos abaixo da média da fronteira. A fronteira evolui
+claramente entre a população inicial e a final: 100% dos pontos
+não-dominados da população inicial agregada são dominados pela fronteira
+final, e nenhum ponto da fronteira final é dominado pela inicial. Discussão
+completa (incluindo a correlação risco-ESG observada na fronteira) em
+`notebooks/cp2_otimizacao_portfolio_multiobjetivo.ipynb`, Seção 12.
+
+## Próximos passos
+
 - Testes estatísticos (Mann-Whitney, correção de Bonferroni) entre métodos
   ainda não foram implementados — a tabela detalhada (uma linha por
-  semente x método) já está no formato necessário para isso.
+  semente x método/algoritmo) já está no formato necessário para isso.
+- O vetor ESG continua sintético (placeholder, sem fonte real de dados ESG
+  integrada) — ver `src/esg_cp2.py` e a Seção 1 do notebook do CP2 para a
+  justificativa e o plano de substituição por dados reais.
