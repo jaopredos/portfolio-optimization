@@ -126,8 +126,8 @@ baselines:
   random_search_avaliacoes: null  # null => calculado como pop_size * n_gen
 
 experimento:
-  n_seeds: 5          # CP1 pede 5 sementes; trivial mudar para 10
-  sementes: [1, 2, 3, 4, 5]
+  n_seeds: 10          # CP1 pede 5 sementes; trivial mudar para 10
+  sementes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
   dir_resultados: "results"
   dir_figuras: "figures"
 
@@ -146,7 +146,7 @@ caminhos:
 # As sementes (`experimento.sementes`, acima) e os diretórios de saída
 # (`experimento.dir_resultados`/`dir_figuras`, acima) são REUSADOS tal como
 # estão — não duplicados aqui — para garantir que o CP2 rode sobre as
-# mesmas 5 sementes do CP1 por construção.
+# mesmas 10 sementes do CP1 por construção.
 # =============================================================================
 
 objetivo_mo:

@@ -4,7 +4,7 @@ Checkpoint 2 estende o CP1 com o terceiro objetivo (ESG, reativado de
 `src/esg_cp2.py`) e resolve o problema com dois MOEAs (NSGA-II e SPEA-II,
 via pymoo), cobrindo os 4 pontos pedidos no enunciado:
 
-  1. Versão multiobjetivo rodando — NSGA-II e SPEA-II, 5 sementes cada
+  1. Versão multiobjetivo rodando — NSGA-II e SPEA-II
      (`src/optimizer_moea.py::rodar_moea`).
   2. Comparação com a versão single-objective — reusa `rodar_de` do CP1
      (sem modificação) sobre os MESMOS dados (mu, Sigma) desta execução, e
@@ -69,7 +69,7 @@ def rodar_experimento_mo(config: dict) -> dict[str, pd.DataFrame]:
 
     sementes = config["experimento"]["sementes"]
 
-    # --- 1. MOEAs (NSGA-II e SPEA-II), 5 sementes cada ---
+    # --- 1. MOEAs (NSGA-II e SPEA-II) ---
     resultados_por_algoritmo: dict[str, list[ResultadoMOEA]] = {nome: [] for nome in ALGORITMOS_MOEA}
     for nome_algoritmo in ALGORITMOS_MOEA:
         for semente in sementes:
@@ -99,7 +99,7 @@ def rodar_experimento_mo(config: dict) -> dict[str, pd.DataFrame]:
         hv_agregado = calcular_hipervolume(F_final_agg, cfg_obj_mo.ref_point)
         n_nao_dominadas_agregado = contar_nao_dominadas(F_final_agg)
         print(
-            f"{nome_algoritmo}: fronteira final agregada (5 sementes) com "
+            f"{nome_algoritmo}: fronteira final agregada ({len(sementes)} sementes) com "
             f"{n_nao_dominadas_agregado} soluções não-dominadas, HV={hv_agregado:.2f}"
         )
 
