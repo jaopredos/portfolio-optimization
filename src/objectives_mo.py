@@ -38,7 +38,7 @@ from typing import Any
 import numpy as np
 
 from src.data_loader import DadosMercado
-from src.esg_cp2 import f3_esg, gerar_esg_sintetico
+from src.esg_cp2 import carregar_esg_real, f3_esg, gerar_esg_sintetico
 from src.objectives import amostrar_carteiras_aleatorias, f1_retorno, f2_risco, normalizar
 
 
@@ -104,12 +104,22 @@ def construir_config_objetivo_mo(dados: DadosMercado, config: dict[str, Any]) ->
     cfg_r = config["restricoes"]
     cfg_hv = config["hipervolume"]
 
-    esg = gerar_esg_sintetico(
-        tickers=dados.tickers,
-        semente_esg=cfg_esg["semente_esg"],
-        score_min=cfg_esg["score_min"],
-        score_max=cfg_esg["score_max"],
-    )
+    fonte = cfg_esg.get("fonte_esg", "ise")
+    if fonte == "ise":
+        esg = carregar_esg_real(
+            tickers=dados.tickers,
+            score_min=cfg_esg["score_min"],
+            score_max=cfg_esg["score_max"],
+        )
+        print(f"Scores ESG (ISE B3): min={esg.min():.1f}, média={esg.mean():.1f}, max={esg.max():.1f}")
+    else:
+        esg = gerar_esg_sintetico(
+            tickers=dados.tickers,
+            semente_esg=cfg_esg["semente_esg"],
+            score_min=cfg_esg["score_min"],
+            score_max=cfg_esg["score_max"],
+        )
+        print(f"Scores ESG (sintético): min={esg.min():.1f}, média={esg.mean():.1f}, max={esg.max():.1f}")
 
     stats = calcular_estatisticas_normalizacao_mo(
         mu=dados.mu,

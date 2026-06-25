@@ -77,7 +77,8 @@ dados:
 # CP1 (data_loader, objectives, baselines, metrics, run_experiment) lê
 # esta seção.
 esg_cp2:
-  semente_esg: 2024
+  fonte_esg: "ise"    # "ise" (ISE B3 real) | "sintetico" (placeholder aleatório)
+  semente_esg: 2024   # usado apenas quando fonte_esg: "sintetico"
   score_min: 0.0
   score_max: 100.0
 
@@ -126,8 +127,8 @@ baselines:
   random_search_avaliacoes: null  # null => calculado como pop_size * n_gen
 
 experimento:
-  n_seeds: 5          # CP1 pede 5 sementes; trivial mudar para 10
-  sementes: [1, 2, 3, 4, 5]
+  n_seeds: 10
+  sementes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
   dir_resultados: "results"
   dir_figuras: "figures"
 
