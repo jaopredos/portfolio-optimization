@@ -2,249 +2,339 @@
 
 Projeto final de **INF0415 — Heurísticas e Modelagem Multiobjetivo** (UFG).
 
-O repositório cobre dois checkpoints:
+O repositório cobre três entregáveis evolutivos sobre o mesmo problema de
+portfólio:
 
-- **Checkpoint 1**: modelagem completa em código do problema clássico de
-  Markowitz (risco-retorno, **mono-objetivo**), otimizado com uma
-  metaheurística (Differential Evolution) e comparado a três baselines, com
-  análise estatística inicial sobre 5 sementes. O ESG **não** faz parte da
-  formulação, do experimento, das métricas nem das figuras deste checkpoint:
-  fica isolado em `src/esg_cp2.py`, preservado para reativação no CP2 sem
-  precisar reescrever o restante do pipeline.
-- **Checkpoint 2**: extensão **multiobjetivo** do mesmo problema, reativando
-  ESG como terceiro objetivo e resolvendo com dois algoritmos evolutivos
-  multiobjetivo (**NSGA-II** e **SPEA-II**, via `pymoo`), comparada à versão
-  mono-objetivo do CP1, a baselines mapeados ao espaço de 3 objetivos e à
-  fronteira de Pareto inicial (população não-evoluída). Ver
-  "Entregável do Checkpoint 2" abaixo.
+- **Checkpoint 1 (CP1):** modelagem mono-objetivo de Markowitz
+  (risco-retorno), otimizado com Differential Evolution e comparado a três
+  baselines, com análise estatística sobre 10 sementes.
+- **Checkpoint 2 (CP2):** extensão multiobjetivo com ESG real (ISE B3) como
+  terceiro objetivo, resolvido com NSGA-II e SPEA-II (pymoo), incluindo
+  testes estatísticos Mann-Whitney U + Bonferroni.
+- **Pré-Final:** integração CP1 → CP2 via **Warm-Start** (pesos do DE
+  injetados na população inicial do NSGA-II) e **XAI Financeiro**
+  (RandomForest + feature importances sobre a fronteira de Pareto).
 
-## Entregável principal: o notebook
+---
 
-**`notebooks/cp1_otimizacao_portfolio.ipynb`** é o entregável do Checkpoint 1.
-É um notebook **autocontido** — define inline toda a modelagem, a
-metaheurística e as análises, sem importar nada de `src/` — e roda do início
-ao fim em um kernel limpo, de forma determinística. Ele contém a formulação
-completa (com LaTeX), o código comentado e a discussão dos resultados.
+## Entregáveis
 
-O pacote `src/` (descrito mais abaixo) implementa exatamente a mesma lógica
-de forma modular, e é mantido como base para o Checkpoint 2 e como caminho
-de linha de comando alternativo (sem precisar de Jupyter). As duas
-implementações foram validadas lado a lado e produzem os mesmos resultados.
+### Checkpoint 1
 
-## Entregável do Checkpoint 2
+**`notebooks/cp1_otimizacao_portfolio.ipynb`**
 
-**`notebooks/cp2_otimizacao_portfolio_multiobjetivo.ipynb`** é o entregável
-do Checkpoint 2 — também autocontido (não importa de `src/`), determinístico
-e reproduzível do início ao fim em um kernel limpo. Reativa o terceiro
-objetivo ESG (`src/esg_cp2.py`) e resolve o problema com **NSGA-II** e
-**SPEA-II** (pymoo nativo), cobrindo os quatro pontos pedidos no enunciado:
-versão multiobjetivo rodando (5 sementes por algoritmo), comparação com a
-versão mono-objetivo (reexecuta o DE do CP1 sobre os mesmos dados e mapeia o
-resultado no espaço de 3 objetivos), baselines ($1/N$ e random search com o
-mesmo orçamento dos MOEAs) e a fronteira de Pareto inicial (população não-
-evoluída) comparada à fronteira final. A discussão de trade-offs (retorno x
-risco x ESG, NSGA-II x SPEA-II, comparação com a escalarização do CP1) está
-na última seção do próprio notebook.
+Notebook autocontido (não importa de `src/`), determinístico e
+reproduzível. Contém formulação completa (com LaTeX), código e discussão
+dos resultados. Seções:
 
-O pacote `src/` ganhou os módulos `*_mo.py` (descritos na Estrutura abaixo),
-implementando a mesma lógica de forma modular — caminho de linha de comando
-alternativo via `uv run python -m src.run_experiment_mo`. Reproduzir:
+| Seção | Conteúdo |
+|---|---|
+| 1–3 | Formulação, setup, dados |
+| 4–7 | Objetivos, DE, baselines, métricas |
+| 8 | Experimento com 10 sementes |
+| 9 | Resultados |
+| 10 | Testes Estatísticos (Mann-Whitney U + Bonferroni) |
+| 11 | Figuras |
+| 12 | Discussão |
 
-```bash
-uv sync
-uv run jupyter nbconvert --to notebook --execute --inplace notebooks/cp2_otimizacao_portfolio_multiobjetivo.ipynb
-```
+### Checkpoint 2
+
+**`notebooks/cp2_otimizacao_portfolio_multiobjetivo.ipynb`**
+
+Notebook autocontido. Reativa ESG como terceiro objetivo com scores reais
+(ISE B3) e resolve com NSGA-II e SPEA-II. Seções:
+
+| Seção | Conteúdo |
+|---|---|
+| 1–3 | Formulação MO, setup, dados |
+| 4 | Objetivos MO, ESG real (ISE B3), normalização 3D |
+| 5–8 | NSGA-II/SPEA-II, DE mono-obj referência, baselines MO, métricas |
+| 9 | Experimento (10 sementes × 2 algoritmos) |
+| 10 | Resultados |
+| 11 | Testes Estatísticos (Mann-Whitney U + Bonferroni) |
+| 12 | Figuras |
+| 13 | Discussão de trade-offs |
+
+### Pré-Final
+
+**`notebooks/pre-final_otimizacao_integrada_xai.ipynb`**
+
+Notebook autocontido. Integra DE (CP1) e NSGA-II (CP2) via Warm-Start e
+adiciona análise XAI. Usa os mesmos scores ESG reais (ISE B3) do CP2.
+
+| Seção | Conteúdo |
+|---|---|
+| 1–3 | Formulação Warm-Start/XAI, setup, dados |
+| 4 | Objetivos, ESG real (ISE B3), normalização 3D |
+| 5 | Metaheurísticas (DE, NSGA-II, SPEA-II) |
+| 6 | Warm-Start: `SamplingWarmStart` (injeção de pesos do DE) |
+| 7 | Experimento: MOEA Normal vs MOEA Warm-Start (10 sementes) |
+| 8 | Resultados e convergência de HV |
+| 9 | XAI Financeiro: RandomForest + Feature Importances |
+| 10 | Discussão |
+
+---
 
 ## Formulação
 
-Variável de decisão: pesos `w ∈ R^N` de uma carteira de `N` ativos, sujeitos a:
+**Variável de decisão:** pesos `w ∈ R^N` da carteira (N=24 ativos B3), com:
 
 ```
 soma(w) = 1            (totalmente investido)
-0 <= w_i <= w_max       (long-only, com teto de concentração por ativo)
+0 ≤ w_i ≤ 0.20         (long-only, teto de 20% por ativo)
 ```
 
-Dois componentes, em forma de minimização:
+**CP1 — mono-objetivo (Markowitz escalarizado):**
 
 ```
-f1(w) = -mu^T w     retorno esperado (negado)
-f2(w) = w^T Sigma w risco (variância)
+min  g(w) = λ₁·f̃₁(w) + λ₂·f̃₂(w)
+onde f₁(w) = -μᵀw  (retorno, negado)
+     f₂(w) = wᵀΣw  (variância)
+     f̃ᵢ   = z-score sobre 5000 carteiras aleatórias (semente 123)
 ```
 
-Objetivo mono-objetivo deste checkpoint — soma ponderada escalarizada e
-**normalizada** (ver `DECISOES.md` sobre por que normalizar):
+**CP2/Pré-Final — multiobjetivo (Pareto):**
 
 ```
-g(w) = lambda1 * f1_norm(w) + lambda2 * f2_norm(w)
+min  (f₁(w), f₂(w), f₃(w))
+onde f₃(w) = -eᵀw  (score ESG negado; e = vetor ISE B3)
 ```
 
-Esta é a leitura clássica de Markowitz: minimizar `g(w)` equivale a maximizar
-a utilidade média-variância `mu^T w - delta * w^T Sigma w`, com
-`delta = lambda2/lambda1` funcionando como coeficiente de aversão ao risco.
+Os três objetivos são normalizados (z-score) antes de entrar nos MOEAs.
 
-**Extensão multiobjetivo (Checkpoint 2).** Adiciona um terceiro componente,
-`f3(w) = -e^T w` (score ESG negado, `e` sintético — ver `src/esg_cp2.py`), e
-**não escaleriza**: os três objetivos `(f1,f2,f3)` são otimizados
-simultaneamente por dominância de Pareto (NSGA-II/SPEA-II), produzindo uma
-fronteira de carteiras em vez de uma única solução. Formulação completa,
-discussão de por que normalizar antes de otimizar mesmo sem escalarização, e
-a comparação com a leitura mono-objetivo acima: ver Seção 1 do notebook do
-CP2.
+---
 
-## Instalação
+## ESG: scores reais ISE B3
 
-Gerenciador de pacotes: **[uv](https://docs.astral.sh/uv/)**.
+Os scores ESG usados no CP2 e no Pré-Final são derivados da **participação
+histórica no Índice de Sustentabilidade Empresarial (ISE B3)** nas
+carteiras de 2020 a 2025. Fonte: `b3.com.br/indices/indices-de-sustentabilidade`.
+
+| Grupo | Critério | Score |
+|---|---|---|
+| 1 | Presença consistente (4–5 carteiras ISE) | 80–95 |
+| 2 | Presença regular (2–3 carteiras) | 55–75 |
+| 3 | Presença rara ou nenhuma (0–1) | 15–45 |
+
+Scores por ticker (ordem decrescente):
+
+| Ticker | Score | Setor |
+|---|---|---|
+| WEGE3.SA | 92 | Bens industriais |
+| ITUB4.SA | 89 | Financeiro |
+| SUZB3.SA | 87 | Papel e celulose |
+| BBDC4.SA | 85 | Financeiro |
+| KLBN11.SA | 84 | Papel e celulose |
+| B3SA3.SA | 83 | Financeiro |
+| TOTS3.SA | 81 | Tecnologia |
+| SBSP3.SA | 80 | Saneamento |
+| VIVT3.SA | 74 | Telecom |
+| RADL3.SA | 71 | Saúde |
+| ITSA4.SA | 68 | Financeiro (holding) |
+| ABEV3.SA | 65 | Bebidas |
+| EQTL3.SA | 63 | Energia |
+| CMIG4.SA | 61 | Energia |
+| LREN3.SA | 58 | Varejo |
+| BBAS3.SA | 56 | Financeiro |
+| RENT3.SA | 55 | Locação |
+| HAPV3.SA | 42 | Saúde |
+| RAIL3.SA | 38 | Logística |
+| GGBR4.SA | 32 | Siderurgia |
+| PETR4.SA | 24 | Petróleo |
+| CSNA3.SA | 21 | Siderurgia |
+| PRIO3.SA | 18 | Petróleo |
+| VALE3.SA | 15 | Mineração |
+
+---
+
+## Instalação e reprodução
+
+**Gerenciador de pacotes:** [uv](https://docs.astral.sh/uv/).
 
 ```bash
 uv sync
 ```
 
-Isso cria o ambiente virtual em `.venv/` e instala todas as dependências
-fixadas em `uv.lock` (espelhadas, sem hashes, em `requirements.txt` para
-quem preferir `pip install -r requirements.txt`).
-
-## Reprodução (no máximo 3 comandos)
+**Reproduzir CP1:**
 
 ```bash
-uv sync
-uv run jupyter nbconvert --to notebook --execute --inplace notebooks/cp1_otimizacao_portfolio.ipynb
+uv run jupyter nbconvert --to notebook --execute --inplace \
+    notebooks/cp1_otimizacao_portfolio.ipynb
 ```
 
-Isso baixa os dados (via yfinance, com cache em `data_cache/`), roda o DE e
-os baselines para as 5 sementes configuradas, gera as tabelas e figuras e
-grava tudo de volta no próprio notebook executado.
-
-Para abrir o notebook interativamente em vez de executá-lo via nbconvert:
-`uv run jupyter lab notebooks/cp1_otimizacao_portfolio.ipynb`, depois
-`Kernel > Restart & Run All`.
-
-Alternativa via linha de comando (gera CSVs em `results/` e figuras em
-`figures/`, usando o pacote modular `src/`):
+**Reproduzir CP2:**
 
 ```bash
-uv run python -m src.run_experiment
+uv run jupyter nbconvert --to notebook --execute --inplace \
+    notebooks/cp2_otimizacao_portfolio_multiobjetivo.ipynb
 ```
+
+**Reproduzir Pré-Final:**
+
+```bash
+uv run jupyter nbconvert --to notebook --execute --inplace \
+    notebooks/pre-final_otimizacao_integrada_xai.ipynb
+```
+
+**Alternativa interativa (qualquer notebook):**
+
+```bash
+uv run jupyter lab
+```
+
+Depois: `Kernel > Restart & Run All`.
+
+**Alternativa via linha de comando (pacote modular `src/`):**
+
+```bash
+uv run python -m src.run_experiment          # CP1
+uv run python -m src.run_experiment_mo       # CP2
+uv run python -m src.run_experiment_integrated  # Pré-Final (Warm-Start)
+```
+
+---
 
 ## Configuração
 
-No notebook, tudo é controlado pela célula `CONFIG` (Seção 2): lista de
-tickers, janela de dados, `w_max`, os `lambda`, parâmetros do DE, e as
-sementes do experimento. Trocar `CONFIG["sementes"]` de 5 para 10 valores,
-por exemplo, não exige nenhuma outra mudança no notebook. No pacote `src/`,
-o mesmo papel é desempenhado por `config/config.yaml`.
+Nos notebooks, todos os parâmetros ficam na célula `CONFIG` (Seção 2):
+tickers, janela de dados, `w_max`, lambdas, parâmetros do DE/NSGA-II/SPEA-II
+e sementes. No pacote `src/`, o equivalente é `config/config.yaml`.
 
-## Estrutura
+---
+
+## Estrutura do repositório
 
 ```
-notebooks/cp1_otimizacao_portfolio.ipynb              Entregável CP1: notebook autocontido (mono-objetivo)
-notebooks/cp2_otimizacao_portfolio_multiobjetivo.ipynb Entregável CP2: notebook autocontido (multiobjetivo)
-config/config.yaml          Configuração dos dois pipelines modulares (src/)
+notebooks/
+  cp1_otimizacao_portfolio.ipynb              Entregável CP1 (mono-objetivo)
+  cp2_otimizacao_portfolio_multiobjetivo.ipynb Entregável CP2 (multiobjetivo)
+  pre-final_otimizacao_integrada_xai.ipynb    Entregável Pré-Final (Warm-Start + XAI)
+  discussao_tradeoffs_cp2.md                  Rascunho de discussão de trade-offs CP2
+  _build_notebook.py                          Script utilitário de montagem de notebook
+  _inspect.py                                 Script utilitário de inspeção
+
+config/
+  config.yaml                Parâmetros dos pipelines modulares (src/)
+
 src/
-  data_loader.py             yfinance -> mu, Sigma (c/ Ledoit-Wolf opcional)
-  objectives.py               f1, f2, normalização (z-score) e g escalarizada — CP1
-  constraints.py              Projeção no capped-simplex (reparo de factibilidade)
-  optimizer_de.py             Problem + Repair + Callback do pymoo, DE — CP1
-  baselines.py                Ótimo exato (cvxpy), 1/N, random search — CP1
-  metrics.py                  Retorno, risco, Sharpe, gap relativo — CP1
-  plots.py                    Curva de convergência e boxplot comparativo — CP1
-  run_experiment.py           Orquestra o CP1, salva CSV e figuras
-  esg_cp2.py                  ESG (f3, gerador sintético, métrica) — reativado no CP2
-  objectives_mo.py            f1,f2,f3 sem escalarização + normalização 3D — CP2
-  optimizer_moea.py           Problem 3-obj + NSGA-II/SPEA-II (pymoo) + hipervolume — CP2
-  baselines_mo.py             1/N e random search no espaço de 3 objetivos — CP2
-  metrics_mo.py                Métricas + hipervolume + contagem de não-dominados — CP2
-  plots_mo.py                  Fronteira inicial/final, convergência de HV, overlay — CP2
-  run_experiment_mo.py         Orquestra o CP2, salva CSV (sufixo _mo) e figuras (sufixo _mo)
-results/                     CSVs dos dois pipelines modulares (CP1 sem sufixo, CP2 com sufixo _mo)
-figures/                     Figuras dos dois pipelines modulares (CP1 sem sufixo, CP2 com sufixo _mo)
+  data_loader.py             yfinance → mu, Sigma (Ledoit-Wolf opcional)
+  objectives.py              f1, f2, normalização z-score, g escalarizada — CP1
+  objectives_mo.py           f1, f2, f3 sem escalarização + normalização 3D — CP2/Pré-Final
+  constraints.py             Projeção no capped-simplex (reparo de factibilidade)
+  optimizer_de.py            Problem + Repair + Callback do pymoo, DE — CP1
+  optimizer_moea.py          Problem 3-obj + NSGA-II/SPEA-II (pymoo) + HV — CP2
+  optimizer_moea_warmstart.py  Variante com SamplingWarmStart (injeção DE → MOEA)
+  baselines.py               Ótimo exato (cvxpy), 1/N, random search — CP1
+  baselines_mo.py            1/N e random search no espaço de 3 objetivos — CP2
+  metrics.py                 Retorno, risco, Sharpe, gap relativo — CP1
+  metrics_mo.py              HV, não-dominância, métricas 3D — CP2/Pré-Final
+  esg_cp2.py                 Scores ESG ISE B3 + gerador sintético (legado)
+  plots.py                   Convergência e boxplot — CP1
+  plots_mo.py                Fronteira inicial/final, HV, overlay — CP2
+  xai_analysis.py            RandomForest + MDI feature importances — Pré-Final
+  utils.py                   Utilitários compartilhados
+  run_experiment.py          Orquestra CP1 → results/ e figures/
+  run_experiment_mo.py       Orquestra CP2 → results/ e figures/
+  run_experiment_integrated.py  Orquestra Pré-Final → results/ e figures/
+  __init__.py
+
+results/
+  resultados_agregados.csv          CP1: métricas por método (agregado)
+  resultados_detalhados.csv         CP1: uma linha por (semente, método)
+  melhores_pesos_de.csv             CP1: pesos ótimos do DE por semente
+  metricas_agregadas_mo.csv         CP2: métricas MO por algoritmo (agregado)
+  pareto_final_mo.csv               CP2: fronteira de Pareto final agregada
+  baselines_mo.csv                  CP2: 1/N e random search no espaço 3D
+  comparacao_so_mo.csv              CP2: overlay do DE (CP1) no espaço 3D
+  comparacao_convergencia_warmstart.csv  Pré-Final: HV por geração (Normal vs WS)
+
+figures/
+  convergencia_de.png               CP1: curva de convergência do DE (10 sementes)
+  boxplot_g_final.png               CP1: boxplot de g final por método
+  convergencia_hv_mo.png            CP2: HV por geração (NSGA-II e SPEA-II)
+  fronteira_inicial_vs_final_mo.png CP2: fronteira inicial vs final
+  pareto_pairwise_mo.png            CP2: pares de objetivos da fronteira final
+  overlay_referencias_mo.png        CP2: overlay DE/1/N/RS na fronteira MO
+  convergencia_warmstart.png        Pré-Final: Normal vs Warm-Start (150 ger.)
+  xai_shap_risco.png                Pré-Final: importâncias para risco
+  xai_shap_esg.png                  Pré-Final: importâncias para score ESG
+
+data_cache/
+  precos_*.csv                      Cache de preços yfinance (evita re-download)
 ```
 
-## Bibliotecas reutilizadas
+---
 
-- **[pymoo](https://pymoo.org/)** — algoritmo Differential Evolution
-  (`pymoo.algorithms.soo.nonconvex.de.DE`, CP1), NSGA-II e SPEA-II
-  (`pymoo.algorithms.moo.nsga2.NSGA2`, `pymoo.algorithms.moo.spea2.SPEA2`,
-  CP2), indicador de hipervolume (`pymoo.indicators.hv.HV`) e ordenação por
-  não-dominância (`pymoo.util.nds.non_dominated_sorting`), além da
-  infraestrutura de `Problem`, `Repair` e `Callback` reaproveitada nos dois
-  checkpoints.
-- **[cvxpy](https://www.cvxpy.org/)** — solver do QP convexo para o ótimo
-  exato (baseline de referência para o gap do DE).
-- **[yfinance](https://github.com/ranaroussi/yfinance)** — download de
-  preços históricos da B3.
-- **[scikit-learn](https://scikit-learn.org/)** — `LedoitWolf` para
-  shrinkage da matriz de covariância.
-- **matplotlib**, **pandas**, **numpy**, **pyyaml** — análise, manipulação
-  de dados e configuração.
-- **jupyter/nbconvert** — execução reprodutível do notebook entregável.
+## Bibliotecas principais
 
-## Suposições e defaults assumidos
+| Biblioteca | Uso |
+|---|---|
+| [pymoo](https://pymoo.org/) | DE (CP1), NSGA-II, SPEA-II (CP2/Pré-Final), HV, NDS |
+| [cvxpy](https://www.cvxpy.org/) | Ótimo exato do QP convexo (baseline CP1) |
+| [yfinance](https://github.com/ranaroussi/yfinance) | Download de preços da B3 |
+| [scikit-learn](https://scikit-learn.org/) | LedoitWolf (covariância), RandomForestRegressor (XAI) |
+| [scipy](https://scipy.org/) | Mann-Whitney U (testes estatísticos CP1 e CP2) |
+| matplotlib, pandas, numpy | Análise, visualização, manipulação de dados |
+| jupyter / nbconvert | Execução reprodutível dos notebooks |
+| pyyaml | Configuração modular (`config/config.yaml`) |
 
-- **Ativos**: 24 ações líquidas da B3, cobrindo setores distintos. Quatro
-  tickers inicialmente cogitados (EMBR3, JBSS3, ELET3, CCRO3) retornavam
-  "possibly delisted" no yfinance no momento da implementação e foram
-  substituídos por ativos de setor equivalente — ver comentário no notebook
-  (Seção 2) e em `config.yaml`.
-- **Janela histórica**: 5 anos terminando na data de execução (`"today"`).
-  Isso significa que `mu` e `Sigma` variam ligeiramente entre execuções em
-  datas diferentes (mercado real) — a reprodutibilidade da *otimização* em
-  si (DE, baselines) é garantida pelas sementes, independentemente disso.
-- **w_max = 0.20**, **w_min = 0.0** (long-only).
-- **lambdas default**: `(0.5, 0.5)` — peso igual entre retorno e risco
-  (coeficiente de aversão ao risco neutro). Configurável.
-- **Taxa livre de risco** (para o Sharpe): `0.0` por simplicidade.
-- **5 sementes** (`[1, 2, 3, 4, 5]`), trivialmente extensível para 10 ou mais.
-- **ESG**: fora de escopo no Checkpoint 1 (reativado no Checkpoint 2 como
-  vetor sintético — ver "Resultados do Checkpoint 2" e `src/esg_cp2.py`).
+---
 
-## Resultados do Checkpoint 1 (execução de referência)
+## Suposições e defaults
 
-Com os defaults (DE: `pop_size=80`, `n_gen=150`), nas 5 sementes:
+- **Ativos:** 24 ações líquidas da B3 cobrindo setores distintos. Quatro
+  tickers cogitados inicialmente (EMBR3, JBSS3, ELET3, CCRO3) retornavam
+  "possibly delisted" no yfinance e foram substituídos por ativos de setor
+  equivalente — ver comentário na Seção 2 dos notebooks.
+- **Janela histórica:** 5 anos até a data de execução (`"today"`). A
+  reprodutibilidade da *otimização* é garantida pelas sementes,
+  independentemente da janela.
+- **w_max = 0.20, w_min = 0.0** (long-only, teto de 20% por ativo).
+- **Lambdas CP1:** `(0.5, 0.5)` — aversão ao risco neutra. Configurável.
+- **Taxa livre de risco:** 0.0 (Sharpe simplificado).
+- **10 sementes** `[1, …, 10]` — mínimo exigido pelo enunciado para análise
+  estatística.
+- **ESG:** scores reais derivados da participação histórica no ISE B3
+  (2020–2025). Detalhes na tabela acima e em `src/esg_cp2.py`.
 
-| Método | g (média) | Sharpe | gap relativo ao ótimo exato |
+---
+
+## Resultados de referência
+
+### CP1 (10 sementes)
+
+| Método | g (média) | Sharpe | gap ao ótimo exato |
 |---|---|---|---|
-| Ótimo exato (cvxpy) | -2.0811 | 1.503 | 0.00% |
-| DE | -2.0765 | 1.498 | ~0.22% |
-| Random Search (mesmo orçamento) | -1.9497 | 1.435 | ~6.31% |
-| 1/N | -0.5523 | 0.431 | ~73.46% |
+| Ótimo exato (cvxpy) | −2,0733 | 1,517 | 0,00% |
+| DE | −2,0696 (±0,0015) | 1,512 | ~0,18% (±0,07 p.p.) |
+| Random Search (mesmo orçamento) | −1,9507 (±0,0280) | 1,449 | ~5,91% (±1,35 p.p.) |
+| 1/N | −0,5523 | 0,443 | ~73,36% |
 
-O DE converge de forma consistente e estável (desvio-padrão de `g` entre
-sementes ≈ `0.002`) para muito próximo do ótimo global do QP, superando
-claramente o random search com o mesmo orçamento de avaliações. Detalhes,
-figuras e discussão completa em `notebooks/cp1_otimizacao_portfolio.ipynb`.
+Testes Mann-Whitney U (DE vs RS, k=3, Bonferroni): p×3=0,0005, r_rb=1,0
+(efeito grande) nas três métricas — DE domina RS em todos os 100 pares.
 
-## Resultados do Checkpoint 2 (execução de referência)
+### CP2 (10 sementes × 2 algoritmos)
 
-Com os defaults (NSGA-II e SPEA-II: `pop_size=100`, `n_gen=150`), nas 5
-sementes, reativando ESG (sintético) como terceiro objetivo:
+| Algoritmo | HV médio por semente (±dp) | HV da fronteira agregada |
+|---|---|---|
+| NSGA-II | 273,61 (±3,81) | 288,15 (409 soluções) |
+| SPEA-II | 262,93 (±6,93) | 276,77 (412 soluções) |
 
-| Algoritmo | HV médio por semente (±desvio) | não-dominadas por semente | HV da fronteira agregada (5 sementes) |
+Testes Mann-Whitney U (NSGA-II vs SPEA-II, k=3 gerações, Bonferroni):
+não-significativo na geração 50 (p×3=1,00); significativo com efeito grande
+na geração 100 (p×3=0,0138, r_rb=0,76) e 150 (p×3=0,0030, r_rb=0,88).
+
+### Pré-Final — Warm-Start (10 sementes, ESG real ISE B3)
+
+| Variante | HV médio (±dp) | mín | máx |
 |---|---|---|---|
-| NSGA-II | 269,38 (±7,30) | 100/100 | 281,91 (307 soluções) |
-| SPEA-II | 266,91 (±5,77) | 100/100 | 277,50 (304 soluções) |
+| MOEA Normal | 253,34 (±3,69) | 245,54 | 258,26 |
+| MOEA Warm-Start | 256,38 (±1,59) | 253,07 | 259,11 |
 
-| Método | retorno | risco | Sharpe | score ESG |
-|---|---|---|---|---|
-| DE mono-objetivo (CP1, mesmos dados) | 25,70% | 17,12% | 1,501 | 39,59 |
-| Fronteira NSGA-II (média) | 18,31% | 16,69% | 1,092 | 59,24 |
-| Fronteira SPEA-II (média) | 19,06% | 16,64% | 1,145 | 62,36 |
+O Warm-Start melhora o HV médio em +1,2% e reduz o desvio-padrão entre
+sementes em 57% (convergência mais previsível). Fronteiras agregadas:
+Normal 399 soluções (HV=264,38), Warm-Start 431 soluções (HV=262,60).
 
-NSGA-II e SPEA-II convergem para fronteiras muito próximas (HV difere por
-menos de 1%). O ponto do DE mono-objetivo não é dominado pela fronteira
-multiobjetivo em nenhuma das 5 sementes — está sobre a fronteira eficiente
-de retorno-risco, mas no canto extremo que ignora ESG por completo, com
-score ESG ~20 pontos abaixo da média da fronteira. A fronteira evolui
-claramente entre a população inicial e a final: 100% dos pontos
-não-dominados da população inicial agregada são dominados pela fronteira
-final, e nenhum ponto da fronteira final é dominado pela inicial. Discussão
-completa (incluindo a correlação risco-ESG observada na fronteira) em
-`notebooks/cp2_otimizacao_portfolio_multiobjetivo.ipynb`, Seção 12.
-
-## Próximos passos
-
-- Testes estatísticos (Mann-Whitney, correção de Bonferroni) entre métodos
-  ainda não foram implementados — a tabela detalhada (uma linha por
-  semente x método/algoritmo) já está no formato necessário para isso.
-- O vetor ESG continua sintético (placeholder, sem fonte real de dados ESG
-  integrada) — ver `src/esg_cp2.py` e a Seção 1 do notebook do CP2 para a
-  justificativa e o plano de substituição por dados reais.
+**XAI — Top-5 feature importances (MDI):**
+- **Risco:** SUZB3 (60,2%), ABEV3 (14,9%), B3SA3 (6,4%), KLBN11 (4,3%), PETR4 (4,0%)
+- **ESG:** PETR4 (74,9%), PRIO3 (15,4%), VALE3 (2,6%), CMIG4 (1,7%), ITUB4 (1,2%)
