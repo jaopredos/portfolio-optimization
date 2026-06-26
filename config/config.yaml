@@ -147,7 +147,7 @@ caminhos:
 # As sementes (`experimento.sementes`, acima) e os diretórios de saída
 # (`experimento.dir_resultados`/`dir_figuras`, acima) são REUSADOS tal como
 # estão — não duplicados aqui — para garantir que o CP2 rode sobre as
-# mesmas 5 sementes do CP1 por construção.
+# mesmas 10 sementes do CP1 por construção.
 # =============================================================================
 
 objetivo_mo:
